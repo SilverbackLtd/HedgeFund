@@ -1,0 +1,10 @@
+[project]
+name = "hedge-fund"
+version = "0.1.0"
+description = "AI Agent Crypto Hedge Fund"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic-ai[mcp]",
+    # "silverback[mcp]",
+]
