@@ -3,12 +3,19 @@ from datetime import datetime
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelRetry
 from pydantic_ai.mcp import MCPServerHTTP
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 # TODO: Add to Silverback Platform via `/mcp`?
 silverback = MCPServerHTTP("http://localhost:8000/sse")
 
+
+llama_33 = OpenAIModel(
+    model_name="llama3.3:latest",
+    provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
+)
 operator = Agent(
-    "google-gla:gemini-2.0-flash",
+    llama_33,  # "google-gla:gemini-2.5-pro",
     mcp_servers=[silverback],
     system_prompt="""You are the operator of an automated bot system called Silverback.
     You have access to tools that allow you to deploy and manage bots on clusters organized by workspace.
@@ -22,7 +29,7 @@ operator = Agent(
 
 
 manager = Agent(
-    "google-gla:gemini-2.0-flash",
+    llama_33,  # "google-gla:gemini-2.5-pro",
     system_prompt="""You are the manager of an automated cryptocurrency hedge fund.
     Your fund has an operator that you can work with to operate a set of trading bots.
     You can ask the operator what the status of the cluster is with the `check_operations` tool.
