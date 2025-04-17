@@ -3,12 +3,19 @@ from datetime import datetime
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelRetry
 from pydantic_ai.mcp import MCPServerHTTP
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 # TODO: Add to Silverback Platform via `/mcp`?
 silverback = MCPServerHTTP("http://localhost:8000/sse")
 
+
+llama_33 = OpenAIModel(
+    model_name="llama3.3:latest",
+    provider=OpenAIProvider(base_url="http://localhost:11434/v1"),
+)
 operator = Agent(
-    "google-gla:gemini-2.0-flash",
+    llama_33,  # "google-gla:gemini-2.5-pro",
     mcp_servers=[silverback],
     system_prompt="""You are the operator of an automated bot system called Silverback.
     You have access to tools that allow you to deploy and manage bots on clusters organized by workspace.
@@ -18,11 +25,20 @@ operator = Agent(
 
 
 # TODO: coder agent
+#   operator => coder: bot has issues
+#   coder => operator: please update bot
+#   manager => coder: change work
+#   coder => manager: I can't fix it, tell user
+
 # TODO: analyst agent
+#   analyst <=> operator: get me data
+#   analyst => coder: refactor bot
+#   manager => analyst: analyze bot
+#   analyst => manager: bot has issues
 
 
 manager = Agent(
-    "google-gla:gemini-2.0-flash",
+    llama_33,  # "google-gla:gemini-2.5-pro",
     system_prompt="""You are the manager of an automated cryptocurrency hedge fund.
     Your fund has an operator that you can work with to operate a set of trading bots.
     You can ask the operator what the status of the cluster is with the `check_operations` tool.
@@ -35,8 +51,7 @@ manager = Agent(
 async def check_operations(ctx) -> list[str]:
     """Ask the operator to check the cluster's status, and return any issues"""
     r = await operator.run(
-        """Please check the status of the cluster and summarize any issues.
-        If There are no issues, do not return anything.""",
+        """Please check the status of the cluster and summarize any issues.""",
         usage=ctx.usage,
     )
     return r.data
@@ -47,7 +62,8 @@ async def restart_bot(ctx, bot_name: str) -> bool:
     """Instruct the operator to restart the bot, and return if it started up healthy or not"""
     try:
         r = await operator.run(
-            f"""Please restart the bot named '{bot_name}' and check it's logs periodically to see if it starts up healthy.
+            f"""Please restart the bot named '{bot_name}' and check it's logs to see if it starts up healthy.
+            If the logs are not available, try again. If the logs are available, check to see if they are healthy.
             Do not check more frequently than once every minute, and don't wait more than 5 minutes to see if it is okay.
             Return True if it is healthy, and False if it is not.""",
             usage=ctx.usage,
