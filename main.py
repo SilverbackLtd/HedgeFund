@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelRetry
 from pydantic_ai.mcp import MCPServerHTTP
@@ -61,13 +63,14 @@ async def main():
     async with operator.run_mcp_servers():
         message_history = []
         while (message := input(">>> ")) != "/quit":
+            start = datetime.now()
             result = await manager.run(
                 message,
                 message_history=message_history,
                 # usage_limits=UsageLimits(request_limit=5, total_tokens_limit=500),
             )
             print(result.data)
-            print("Usage:", result.usage())
+            print(f"{result.usage()} | Execution Time: {datetime.now() - start}")
 
             message_history.extend(result.new_messages())
 
